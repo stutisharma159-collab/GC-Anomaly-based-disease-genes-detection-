@@ -1,0 +1,3 @@
+data/raw/*.fasta
+__pycache__/
+.venv/
