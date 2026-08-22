@@ -2,7 +2,7 @@ import os
 import csv
 
 from gc_content import load_sequence
-from sliding_window import sliding_gc
+from sliding_window import sliding_window_gc, calculate_spikiness
 
 
 RAW_DIR = "data/raw/fasta files"
@@ -11,19 +11,17 @@ OUTPUT_FILE = "results/features.csv"
 
 def compute_features(gene_name, seq):
 
-    profile = sliding_gc(seq)
+    window_results = sliding_window_gc(seq)
+    window_results, mean_gc, std_gc = calculate_spikiness(window_results)
 
-    mean_gc = sum(profile) / len(profile)
+    profile = [row["gc_content"] for row in window_results]
+    z_scores = [row["z_score"] for row in window_results]
+
     max_gc = max(profile)
     min_gc = min(profile)
 
-    std_gc = (
-        sum((x - mean_gc) ** 2 for x in profile) / len(profile)
-    ) ** 0.5
-
-    # How much the highest GC window rises above
-    # the overall average GC of the sliding windows
     spikiness = max_gc - mean_gc
+    max_z_score = max(z_scores)
 
     return {
         "gene": gene_name,
@@ -32,6 +30,7 @@ def compute_features(gene_name, seq):
         "min_gc": round(min_gc, 2),
         "std_gc": round(std_gc, 2),
         "spikiness": round(spikiness, 2),
+        "max_z_score": round(max_z_score, 2),
     }
 
 
